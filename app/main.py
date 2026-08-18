@@ -6,7 +6,7 @@ from fastapi.responses import RedirectResponse
 
 from app.core.config import get_settings
 from app.core.database import Base, engine
-from app.routers import auth, health
+from app.routers import auth, health, business
 
 settings = get_settings()
 
@@ -30,7 +30,7 @@ app.add_middleware(
 app.include_router(health.router)
 app.include_router(auth.router)
 app.include_router(auth.token_router)
-
+app.include_router(business.router)
 
 @app.get("/", include_in_schema=False)
 def root() -> RedirectResponse:
