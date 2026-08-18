@@ -1,3 +1,10 @@
+import os
+
+os.environ["N8N_WEBHOOK_URL"] = ""
+os.environ["N8N_SCHEDULE_WEBHOOK_URL"] = ""
+os.environ["CLOUDINARY_CLOUD_NAME"] = ""
+os.environ["CLOUDINARY_UPLOAD_PRESET"] = ""
+
 import pytest
 from sqlalchemy import text
 

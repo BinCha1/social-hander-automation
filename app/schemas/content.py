@@ -67,3 +67,14 @@ class ContentResponse(BaseModel):
     updated_at: datetime
 
     model_config = {"from_attributes": True}
+
+
+class ContentAutomationResponse(ContentResponse):
+    hasRow: bool | None = None
+    rowNumber: int | None = None
+    job: dict | None = None
+    business: dict | None = None
+    content: dict | None = None
+    media: dict | None = None
+    credentials: dict | None = None
+    payload_error: str | None = None

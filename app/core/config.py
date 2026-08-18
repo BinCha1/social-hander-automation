@@ -13,6 +13,10 @@ class Settings(BaseSettings):
     access_token_expire_minutes: int = 60
     cors_origins: list[str] = ["*"]
     n8n_webhook_secret: str = ""
+    n8n_webhook_url: str = ""
+    n8n_schedule_webhook_url: str = ""
+    cloudinary_cloud_name: str = ""
+    cloudinary_upload_preset: str = ""
 
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
