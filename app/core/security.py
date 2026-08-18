@@ -11,6 +11,8 @@ from jwt.exceptions import InvalidTokenError
 from pwdlib import PasswordHash
 
 from cryptography.fernet import Fernet
+from cryptography.exceptions import InvalidSignature
+from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
 
 from app.core.config import get_settings
 
@@ -21,7 +23,7 @@ ALGORITHM = "HS256"
 password_hash = PasswordHash.recommended()
 
 # Extracts the Bearer token from the Authorization header.
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/token")
 
 # Timing-attack guard: verify against a dummy hash when the user is missing.
 DUMMY_HASH = password_hash.hash("dummypassword")
@@ -68,3 +70,15 @@ def verify_n8n_secret(secret: str) -> bool:
     return bool(settings.n8n_webhook_secret) and hmac.compare_digest(
         settings.n8n_webhook_secret, secret
     )
+
+def verify_interaction_signature(
+    public_key_hex: str, signature_hex: str, timestamp: str, raw_body: bytes
+) -> bool:
+    if not public_key_hex or not signature_hex or not timestamp:
+        return False
+    try:
+        public_key = Ed25519PublicKey.from_public_bytes(bytes.fromhex(public_key_hex))
+        public_key.verify(bytes.fromhex(signature_hex), timestamp.encode() + raw_body)
+        return True
+    except (ValueError, InvalidSignature):
+        return False

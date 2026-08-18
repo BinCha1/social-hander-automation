@@ -11,7 +11,7 @@ N8N_HEADERS = {"X-N8N-Webhook-Secret": get_settings().n8n_webhook_secret}
 
 def register_and_token(username: str) -> str:
     r = client.post(
-        "/auth/register",
+        "/api/v1/auth/register",
         json={"username": username, "email": f"{username}@example.com", "password": "secret-password"},
     )
     return r.json()["access_token"]
@@ -23,7 +23,7 @@ def auth(token: str) -> dict:
 
 def create_business(token: str):
     client.post(
-        "/business/profile",
+        "/api/v1/business/profile",
         json={"name": "Acme Agency", "brand_tone": "Playful", "industry": "Marketing", "about": "We build brands"},
         headers=auth(token),
     )
@@ -31,26 +31,26 @@ def create_business(token: str):
 
 def connect_credential(token: str, platform: str, account_id: str, token_value: str):
     client.post(
-        "/credentials",
+        "/api/v1/credentials",
         json={"platform": platform, "account_name": platform, "account_id": account_id, "access_token": token_value},
         headers=auth(token),
     )
 
 
-def test_automation_fetch_returns_payload():
+def test_automation_fetch_returns_payload(client):
     token = register_and_token("n8n_user")
     h = auth(token)
     create_business(token)
     connect_credential(token, "facebook", "123", "EAAB-secret")
 
     r = client.post(
-        "/content",
+        "/api/v1/content",
         json={"topic": "Launch", "platforms": ["facebook"], "mode": "schedule"},
         headers=h,
     )
     cid = r.json()["id"]
 
-    r = client.get("/content?status=pending&mode=schedule&limit=1", headers=N8N_HEADERS)
+    r = client.get("/api/v1/content?status=pending&mode=schedule&limit=1", headers=N8N_HEADERS)
     assert r.status_code == 200
     rows = r.json()
     assert len(rows) == 1
@@ -64,7 +64,7 @@ def test_automation_fetch_returns_payload():
     assert row["payload_error"] is None
 
 
-def test_instant_dispatch_fires_webhook(monkeypatch):
+def test_instant_dispatch_fires_webhook(client, monkeypatch):
     token = register_and_token("dispatch_user")
     h = auth(token)
     create_business(token)
@@ -73,10 +73,12 @@ def test_instant_dispatch_fires_webhook(monkeypatch):
     mock_post.return_value.status_code = 200
     mock_post.return_value.text = "ok"
 
-    monkeypatch.setattr("app.routers.content.settings.n8n_webhook_url", "http://fake-webhook.test")
+    fake_settings = get_settings()
+    fake_settings.n8n_webhook_url = "http://fake-webhook.test"
+    monkeypatch.setattr("app.routers.content.get_settings", lambda: fake_settings)
     with unittest.mock.patch("app.routers.content.httpx.post", mock_post):
         r = client.post(
-            "/content",
+            "/api/v1/content",
             json={"topic": "Go live", "platforms": ["instagram"], "mode": "instant"},
             headers=h,
         )
@@ -90,10 +92,10 @@ def test_instant_dispatch_fires_webhook(monkeypatch):
     assert r.json()["n8n_status_code"] == 200
 
 
-def test_automation_fetch_payload_error_when_no_business():
+def test_automation_fetch_payload_error_when_no_business(client):
     token = register_and_token("nobiz_user")
     h = auth(token)
-    client.post("/content", json={"topic": "X", "platforms": ["linkedin"], "mode": "schedule"}, headers=h)
-    r = client.get("/content?status=pending&mode=schedule&limit=1", headers=N8N_HEADERS)
+    client.post("/api/v1/content", json={"topic": "X", "platforms": ["linkedin"], "mode": "schedule"}, headers=h)
+    r = client.get("/api/v1/content?status=pending&mode=schedule&limit=1", headers=N8N_HEADERS)
     assert r.status_code == 200
     assert r.json()[0]["payload_error"] == "Business profile not found"

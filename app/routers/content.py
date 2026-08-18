@@ -24,7 +24,6 @@ from app.schemas.content import (
 from app.schemas.credentials import SUPPORTED_PLATFORMS
 
 router = APIRouter(prefix="/content", tags=["Content Requests"])
-settings = get_settings()
 
 
 def _ensure_actor(actor: User | str | None) -> User | str:
@@ -59,10 +58,10 @@ def _resolve_credentials(db: Session, user_id: str, platforms: list[str]) -> dic
             continue
         credentials[f"{key}_token"] = decrypt_credential(account.encrypted_access_token)
         credentials[f"{key}_account_id"] = account.account_id
-    if settings.cloudinary_cloud_name:
-        credentials["cloudinary_cloud_name"] = settings.cloudinary_cloud_name
-    if settings.cloudinary_upload_preset:
-        credentials["cloudinary_upload_preset"] = settings.cloudinary_upload_preset
+    if get_settings().cloudinary_cloud_name:
+        credentials["cloudinary_cloud_name"] = get_settings().cloudinary_cloud_name
+    if get_settings().cloudinary_upload_preset:
+        credentials["cloudinary_upload_preset"] = get_settings().cloudinary_upload_preset
     return credentials
 
 
@@ -135,7 +134,7 @@ def _automation_response(db: Session, content: Content) -> ContentAutomationResp
 
 
 def _trigger_webhook(db: Session, content: Content) -> Content:
-    if not settings.n8n_webhook_url:
+    if not get_settings().n8n_webhook_url:
         return content
     business = db.execute(
         select(Business).where(Business.user_id == content.user_id)
@@ -143,11 +142,11 @@ def _trigger_webhook(db: Session, content: Content) -> Content:
     credentials = _resolve_credentials(db, content.user_id, content.platforms)
     payload = _build_payload(content, business, credentials)
     headers = {"Content-Type": "application/json"}
-    if settings.n8n_webhook_secret:
-        headers["X-N8N-Webhook-Secret"] = settings.n8n_webhook_secret
+    if get_settings().n8n_webhook_secret:
+        headers["X-N8N-Webhook-Secret"] = get_settings().n8n_webhook_secret
     try:
         response = httpx.post(
-            settings.n8n_webhook_url, json=payload, headers=headers, timeout=30.0
+            get_settings().n8n_webhook_url, json=payload, headers=headers, timeout=30.0
         )
         content.n8n_status_code = response.status_code
         content.n8n_response = response.text[:4000]

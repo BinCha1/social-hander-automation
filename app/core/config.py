@@ -15,6 +15,8 @@ class Settings(BaseSettings):
     n8n_webhook_secret: str = ""
     n8n_webhook_url: str = ""
     n8n_schedule_webhook_url: str = ""
+    n8n_approval_webhook_url: str = ""
+    discord_public_key: str = ""
     cloudinary_cloud_name: str = ""
     cloudinary_upload_preset: str = ""
 
