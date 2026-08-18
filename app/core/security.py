@@ -2,10 +2,14 @@ from datetime import datetime, timedelta, timezone
 from typing import Annotated
 
 import jwt
+import base64
+import hashlib
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from jwt.exceptions import InvalidTokenError
 from pwdlib import PasswordHash
+
+from cryptography.fernet import Fernet
 
 from app.core.config import get_settings
 
@@ -43,3 +47,16 @@ def decode_access_token(token: str) -> dict | None:
         return jwt.decode(token, settings.secret_key, algorithms=[ALGORITHM])
     except InvalidTokenError:
         return None
+
+
+fernet_key = base64.urlsafe_b64encode(
+    hashlib.sha256(settings.secret_key.encode()).digest()
+)
+_cipher_suite = Fernet(fernet_key)
+
+def encrypt_credential(plain_text: str) -> str:
+    return _cipher_suite.encrypt(plain_text.encode()).decode()
+
+
+def decrypt_credential(cipher_text: str) -> str:
+    return _cipher_suite.decrypt(cipher_text.encode()).decode()
