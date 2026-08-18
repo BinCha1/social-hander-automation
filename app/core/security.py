@@ -1,6 +1,7 @@
 from datetime import datetime, timedelta, timezone
 from typing import Annotated
 
+import hmac
 import jwt
 import base64
 import hashlib
@@ -60,3 +61,10 @@ def encrypt_credential(plain_text: str) -> str:
 
 def decrypt_credential(cipher_text: str) -> str:
     return _cipher_suite.decrypt(cipher_text.encode()).decode()
+
+
+
+def verify_n8n_secret(secret: str) -> bool:
+    return bool(settings.n8n_webhook_secret) and hmac.compare_digest(
+        settings.n8n_webhook_secret, secret
+    )
