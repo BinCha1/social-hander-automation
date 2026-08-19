@@ -11,6 +11,7 @@ from app.core.security import decrypt_credential
 from app.dependencies import get_current_active_user, get_request_actor
 from app.models.business import Business
 from app.models.content import Content
+from app.models.discord_config import DiscordConfig
 from app.models.social_account import SocialAccount
 from app.models.user import User
 from app.schemas.content import (
@@ -58,6 +59,12 @@ def _resolve_credentials(db: Session, user_id: str, platforms: list[str]) -> dic
             continue
         credentials[f"{key}_token"] = decrypt_credential(account.encrypted_access_token)
         credentials[f"{key}_account_id"] = account.account_id
+    discord_config = db.execute(
+        select(DiscordConfig).where(DiscordConfig.user_id == user_id)
+    ).scalar_one_or_none()
+    if discord_config and discord_config.is_active:
+        credentials["discord_bot_token"] = decrypt_credential(discord_config.encrypted_bot_token)
+        credentials["discord_channel_id"] = discord_config.channel_id
     if get_settings().cloudinary_cloud_name:
         credentials["cloudinary_cloud_name"] = get_settings().cloudinary_cloud_name
     if get_settings().cloudinary_upload_preset:

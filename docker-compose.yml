@@ -1,3 +1,5 @@
+version: '3.8'
+
 services:
   postgres:
     image: postgres:16-alpine
@@ -15,6 +17,63 @@ services:
       interval: 5s
       timeout: 5s
       retries: 10
+    networks:
+      - n8n_tunnel_net
+
+  n8n:
+    image: docker.n8n.io/n8nio/n8n:latest
+    restart: unless-stopped
+    ports:
+      - "5678:5678"
+    env_file:
+      - .env
+    environment:
+      - N8N_ENFORCE_SETTINGS_FILE_PERMISSIONS=false
+      - N8N_WEBHOOK_URL=${N8N_WEBHOOK_URL_UI}
+      - N8N_EDITOR_BASE_URL=${N8N_WEBHOOK_URL_UI}
+      - N8N_MCP_MANAGED_BY_ENV=true
+      - N8N_MCP_ACCESS_ENABLED=true
+      - N8N_TRUST_PROXY=true
+    volumes:
+      - n8n_data:/home/node/.n8n
+    networks:
+      - n8n_tunnel_net
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    networks:
+      - n8n_tunnel_net
+    depends_on:
+      - n8n
+
+  ngrok:
+    image: ngrok/ngrok:latest
+    restart: unless-stopped
+    command:
+      - "http"
+      - "--url=captivity-scenic-enrage.ngrok-free.dev"
+      - "caddy:80"
+    environment:
+      - NGROK_AUTHTOKEN=${NGROK_AUTHTOKEN}
+    ports:
+      - "4040:4040"
+    networks:
+      - n8n_tunnel_net
+    depends_on:
+      - caddy
 
 volumes:
+  n8n_data:
+    external: true
   postgres_data:
+
+networks:
+  n8n_tunnel_net:
+    driver: bridge

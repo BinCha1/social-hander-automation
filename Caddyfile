@@ -1,0 +1,15 @@
+{
+    auto_https off
+}
+
+:80 {
+    # Backend (FastAPI on the host) - Discord interactions + API
+    handle /api/* {
+        reverse_proxy host.docker.internal:8000
+    }
+
+    # Everything else goes to n8n (editor, webhooks, MCP server)
+    handle {
+        reverse_proxy n8n:5678
+    }
+}
