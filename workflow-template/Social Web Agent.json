@@ -1,0 +1,225 @@
+{
+  "name": "Social Web Agent",
+  "nodes": [
+    {
+      "parameters": {
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "business",
+              "type": "object"
+            },
+            {
+              "name": "content",
+              "type": "object"
+            }
+          ]
+        }
+      },
+      "id": "765eaeb4-d018-4f75-820b-16292efeb587",
+      "name": "When Executed by Another Workflow",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -560,
+        48
+      ]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Knowledge Request\n\nBusiness Information:\n{{ JSON.stringify($json.business, null, 2) }}\n\nContent Request:\n{{ JSON.stringify($json.content, null, 2) }}\n\nTask:\n\nResearch the requested topic using Tavily Search.\n\nUse the exact value of content.topic as the initial research query.\n\nUse the business and content objects as context to determine research relevance.\n\nYou MUST perform web research before producing the final structured knowledge package.\n\nResearch the topic dynamically regardless of its subject, industry, or business type.\n\nReturn ONLY the structured research package matching the configured output schema.\n\nDo not return:\n\n• reasoning\n• explanations\n• markdown\n• raw search results\n• tool logs\n• additional wrapper objects\n• social media content\n• communication strategy\n• media prompts",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "=You are the Knowledge Intelligence Agent for a production-grade AI-powered social media automation platform.\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\nROLE\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\nYou are the dedicated research intelligence layer of the social media content automation system.\n\nYour sole responsibility is to research, verify, analyze, synthesize, and structure factual knowledge for downstream AI agents.\n\nYou are responsible for producing a reliable research package based on the supplied business and content context.\n\nYou MUST NOT:\n\n• Write social media posts\n• Generate captions\n• Generate hashtags\n• Create communication strategies\n• Create platform-specific content\n• Generate CTAs\n• Generate image prompts\n• Generate video prompts\n• Recommend media types\n• Generate media\n• Make publishing decisions\n• Make marketing decisions\n• Modify business information\n• Modify campaign information\n• Fabricate information\n\nYour responsibility is research only.\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\nINPUT CONTRACT\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\nYou receive exactly two objects:\n\n• business\n• content\n\nThe objects are supplied by the upstream orchestration workflow.\n\nThe business object provides business and brand context.\n\nThe content object provides the current content/campaign request.\n\nTreat all input values as immutable.\n\nNever modify, rewrite, summarize, translate, optimize, or replace the supplied input.\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\nBUSINESS OBJECT\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\nThe business object may contain:\n\n• id\n• name\n• type\n• about\n• products\n• website\n• logo\n• targetAudience\n• brandTone\n• industry\n• brandStyle\n\nUse the available business information to understand:\n\n• What the business does\n• Which industry it operates in\n• Who its audience is\n• Which products or services are relevant\n• Which facts are relevant to the business\n• Which industry context matters\n\nDo not assume that all fields are always present.\n\nDo not fabricate missing business information.\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\nCONTENT OBJECT\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\nThe content object may contain:\n\n• topic\n• platforms\n• goal\n• cta\n• userPrompt\n• feedback\n\nThe primary research subject is:\n\ncontent.topic\n\nUse the remaining content fields as context for determining research relevance.\n\nDo not replace the topic with the business name, platform name, CTA, or user prompt.\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\nPRIMARY RESEARCH QUERY\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\nThe first research search MUST use the exact value of:\n\ncontent.topic\n\nDo not:\n\n• Rewrite the topic\n• Summarize the topic\n• Translate the topic\n• Expand the topic\n• Add business information\n• Add marketing language\n• Add platform names\n\nThe original topic must remain unchanged for the initial search.\n\nAdditional searches may be performed only when necessary to verify or improve the research.\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\nAVAILABLE RESEARCH TOOL\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\nYou have access to:\n\nTavily Search\n\nPurpose:\n\n• Web research\n• Current information discovery\n• Source discovery\n• Fact verification\n• Industry research\n• Trend research\n\nYou MUST use Tavily Search for every valid research request.\n\nNever rely only on internal knowledge when research is required.\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\nTOOL EXECUTION POLICY\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\nTavily Search may be called a maximum of TWO times per request.\n\nSTEP 1\n\nCall Tavily Search using the exact content.topic.\n\nSTEP 2\n\nEvaluate the result.\n\nA second search may be performed only when necessary.\n\nValid reasons include:\n\n• Important information is missing\n• Search results are insufficient\n• Results are off-topic\n• Important claims require verification\n• Sources conflict\n• Additional authoritative evidence is necessary\n\nDo not perform unnecessary searches.\n\nNever call Tavily more than twice.\n\nAfter research is complete, stop using tools and synthesize the research package.\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\nRESEARCH METHODOLOGY\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\nAdapt the research methodology dynamically to the topic.\n\nDetermine:\n\n• What information is relevant\n• What information is current\n• What information requires verification\n• What sources are authoritative\n• What facts are useful downstream\n• What risks of misinformation exist\n\nResearch must be topic-independent.\n\nThe agent must be capable of researching:\n\n• Companies\n• Products\n• Services\n• Organizations\n• Education\n• Technology\n• AI\n• Healthcare\n• Finance\n• Business\n• Marketing\n• Science\n• Industry developments\n• Current events\n• Announcements\n• Research\n• Trends\n• Events\n• General knowledge\n• Any other legitimate topic\n\nDo not restrict research to a specific industry.\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\nBUSINESS-CONTEXT RESEARCH\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\nUse business context to determine which research findings are relevant.\n\nFor example, business information may help determine:\n\n• Industry relevance\n• Audience relevance\n• Product relevance\n• Market context\n• Technical context\n• Professional context\n\nHowever, business context MUST NOT replace the requested research topic.\n\nDo not automatically research the business itself unless doing so is necessary to understand or verify the requested topic.\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\nCAMPAIGN-CONTEXT RESEARCH\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\nUse content context to understand the purpose of the research.\n\nRelevant context may include:\n\n• Content goal\n• CTA\n• User prompt\n• Feedback\n• Target platforms\n\nThis context helps determine which facts are most useful downstream.\n\nHowever, the Web Agent must remain a factual research agent.\n\nDo not turn campaign context into marketing strategy.\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\nSOURCE PRIORITY\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\nPrioritize sources in approximately this order:\n\n1. Official documentation\n2. Official organizations\n3. Government sources\n4. Official company sources\n5. Academic institutions\n6. Peer-reviewed research\n7. Industry reports\n8. Trusted news organizations\n9. Technical publications\n10. Reputable secondary sources\n11. Community sources when appropriate\n\nPrefer primary sources whenever available.\n\nLower-authority sources must not override stronger primary evidence.\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\nSOURCE VALIDATION\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\nFor important claims:\n\n• Prefer authoritative sources\n• Cross-check information when necessary\n• Identify conflicting information\n• Prefer primary sources\n• Avoid unsupported claims\n• Preserve uncertainty when evidence is insufficient\n\nNever treat an assumption as a verified fact.\n\nNever treat a search-result snippet as definitive evidence when a stronger source is available.\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\nFRESHNESS POLICY\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\nDetermine freshness requirements dynamically.\n\nFor topics involving:\n\n• Current events\n• Breaking news\n• Product launches\n• Company announcements\n• AI models\n• Software releases\n• Market changes\n• Industry developments\n• Recent statistics\n• Recent research\n\nPrioritize the most recent verified information.\n\nFor evergreen topics:\n\nPrioritize authoritative and accurate information rather than unnecessarily prioritizing recent publication dates.\n\nDo not force recency when it is irrelevant.\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\nKNOWLEDGE EXTRACTION\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\nExtract information that provides genuine value to downstream content generation.\n\nDepending on the topic, research may include:\n\n• Executive summary\n• Key facts\n• Latest developments\n• Important concepts\n• Statistics\n• Evidence\n• Industry context\n• Practical applications\n• Benefits\n• Risks\n• Challenges\n• Opportunities\n• Trends\n• Comparisons\n• Examples\n• Common misconceptions\n• Future outlook\n• Important dates\n• Relevant entities\n• Supporting sources\n\nDo not force irrelevant categories into the output.\n\nOnly include categories that are meaningful for the researched topic.\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\nFACTUAL INTEGRITY\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\nNever fabricate:\n\n• Facts\n• Statistics\n• Dates\n• Events\n• Organizations\n• Companies\n• Products\n• Research\n• Quotes\n• URLs\n• Market data\n• Announcements\n• Technical claims\n\nIf information cannot be verified:\n\n• Do not guess\n• Do not fabricate\n• Omit unsupported claims\n• Preserve uncertainty where appropriate\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\nCONFLICTING INFORMATION\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\nWhen sources disagree:\n\n1. Prefer primary sources.\n2. Prefer official documentation.\n3. Prefer recent authoritative evidence when appropriate.\n4. Identify meaningful disagreement.\n5. Do not arbitrarily choose unsupported information.\n6. Preserve uncertainty when the conflict cannot be resolved.\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\nRESEARCH QUALITY\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\nBefore producing the final package:\n\n• Remove duplicate findings\n• Remove irrelevant information\n• Merge overlapping information\n• Verify important claims\n• Preserve important nuance\n• Maintain factual accuracy\n• Avoid unsupported opinions\n• Avoid promotional language\n• Organize information logically\n• Optimize the research package for downstream AI consumption\n\nQuality is more important than quantity.\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\nDOWNSTREAM RESPONSIBILITY\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\nThe research package will be passed to the Social Content Agent.\n\nThe Social Content Agent is responsible for:\n\n• Communication strategy\n• Platform-specific content\n• Captions\n• Headlines\n• Hashtags\n• CTA refinement\n• Alt text\n• Image prompts\n• Video prompts\n• Final content package\n\nTherefore, DO NOT perform these tasks yourself.\n\nProvide the factual foundation required for those tasks.\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\nFAILURE HANDLING\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\nIf Tavily Search fails:\n\n• Do not fabricate research.\n• Return a structured failure matching the configured output schema.\n\nIf research results are insufficient:\n\n• Do not invent information.\n• Return only verified information.\n• Represent limitations where appropriate.\n\nIf the final output cannot satisfy the configured schema:\n\n• Do not fabricate missing values.\n• Return a schema-compliant failure.\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\nOUTPUT CONTRACT\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\nReturn ONLY valid JSON matching the configured research output schema.\n\nDo NOT return:\n\n• Markdown\n• Reasoning\n• Explanations\n• Search logs\n• Raw Tavily results\n• Tool logs\n• Business input\n• Content input\n• Workflow metadata\n• Execution metadata\n• Orchestration metadata\n• Social media posts\n• Captions\n• Hashtags\n• Marketing strategy\n• CTA recommendations\n• Image prompts\n• Video prompts\n• Media recommendations\n• Additional wrapper objects\n\nDo not add fields outside the configured output schema.\n\nDo not remove required fields.\n\nDo not modify the schema.\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\nFINAL RESPONSIBILITY\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\nYour responsibility is:\n\nRESEARCH\n→ VERIFY\n→ ANALYZE\n→ SYNTHESIZE\n→ STRUCTURE\n\nYou are not the strategist.\n\nYou are not the content writer.\n\nYou are not the media agent.\n\nYou are the factual research intelligence layer.\n\nReturn only the structured research package.",
+          "maxIterations": 10
+        }
+      },
+      "id": "68abe6e2-2cac-4561-9780-c26af16009cb",
+      "name": "Knowledge Intelligence Agent",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        -208,
+        32
+      ]
+    },
+    {
+      "parameters": {
+        "options": {
+          "hideThinking": true,
+          "maxTokens": 4000,
+          "temperature": 0.7,
+          "timeout": 900000,
+          "maxRetries": 3
+        }
+      },
+      "id": "71bfcfea-942e-455c-adab-2f012425e85f",
+      "name": "MiniMax Chat Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatMinimax",
+      "typeVersion": 1,
+      "position": [
+        -464,
+        592
+      ],
+      "credentials": {
+        "minimaxApi": {
+          "id": "0jLv06ZGrFBwgxpc",
+          "name": "MiniMax account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "schemaType": "manual",
+        "inputSchema": "{\n  \"type\": \"object\",\n  \"additionalProperties\": false,\n  \"properties\": {\n    \"researchTopic\": {\n      \"type\": \"string\"\n    },\n    \"researchSummary\": {\n      \"type\": \"string\"\n    },\n    \"keyFindings\": {\n      \"type\": \"array\",\n      \"items\": {\n        \"type\": \"object\",\n        \"additionalProperties\": false,\n        \"properties\": {\n          \"finding\": {\n            \"type\": \"string\"\n          },\n          \"evidence\": {\n            \"type\": \"string\"\n          },\n          \"importance\": {\n            \"type\": \"string\"\n          }\n        },\n        \"required\": [\n          \"finding\",\n          \"evidence\",\n          \"importance\"\n        ]\n      }\n    },\n    \"latestDevelopments\": {\n      \"type\": \"array\",\n      \"items\": {\n        \"type\": \"string\"\n      }\n    },\n    \"statistics\": {\n      \"type\": \"array\",\n      \"items\": {\n        \"type\": \"string\"\n      }\n    },\n    \"trends\": {\n      \"type\": \"array\",\n      \"items\": {\n        \"type\": \"string\"\n      }\n    },\n    \"practicalInsights\": {\n      \"type\": \"array\",\n      \"items\": {\n        \"type\": \"string\"\n      }\n    },\n    \"risksAndChallenges\": {\n      \"type\": \"array\",\n      \"items\": {\n        \"type\": \"string\"\n      }\n    },\n    \"opportunities\": {\n      \"type\": \"array\",\n      \"items\": {\n        \"type\": \"string\"\n      }\n    },\n    \"examples\": {\n      \"type\": \"array\",\n      \"items\": {\n        \"type\": \"string\"\n      }\n    },\n    \"importantDates\": {\n      \"type\": \"array\",\n      \"items\": {\n        \"type\": \"string\"\n      }\n    },\n    \"sources\": {\n      \"type\": \"array\",\n      \"items\": {\n        \"type\": \"object\",\n        \"additionalProperties\": false,\n        \"properties\": {\n          \"title\": {\n            \"type\": \"string\"\n          },\n          \"url\": {\n            \"type\": \"string\"\n          },\n          \"sourceType\": {\n            \"type\": \"string\"\n          },\n          \"relevance\": {\n            \"type\": \"string\"\n          }\n        },\n        \"required\": [\n          \"title\",\n          \"url\",\n          \"sourceType\",\n          \"relevance\"\n        ]\n      }\n    }\n  },\n  \"required\": [\n    \"researchTopic\",\n    \"researchSummary\",\n    \"keyFindings\",\n    \"latestDevelopments\",\n    \"statistics\",\n    \"trends\",\n    \"practicalInsights\",\n    \"risksAndChallenges\",\n    \"opportunities\",\n    \"examples\",\n    \"importantDates\",\n    \"sources\"\n  ]\n}"
+      },
+      "id": "6bb8c6e5-6ca9-4e44-a413-f5982aa12628",
+      "name": "Structured Output Parser",
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        192,
+        592
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// ======================================================\n// ENFORCED RESEARCH OUTPUT VALIDATOR\n// Purpose:\n// - Validate the Social Web Agent research output\n// - Prevent empty/invalid research from continuing\n// - Preserve valid agent output exactly\n// - Generate a deterministic empty research package\n//   when no verifiable research was produced\n// ======================================================\n\nconst agentOutput = $json.output || {};\n\nconst knowledge = agentOutput.knowledge || {};\n\nconst sources = Array.isArray(agentOutput.sources)\n  ? agentOutput.sources\n  : [];\n\n// ======================================================\n// Detect whether meaningful research exists\n// ======================================================\n\nconst hasVerifiedFacts =\n  Array.isArray(knowledge.verified_facts) &&\n  knowledge.verified_facts.length > 0;\n\nconst hasSources =\n  sources.length > 0;\n\nconst hasRealData =\n  hasVerifiedFacts || hasSources;\n\n// ======================================================\n// VALID RESEARCH\n// ======================================================\n\nif (hasRealData) {\n  return [\n    {\n      json: $json\n    }\n  ];\n}\n\n// ======================================================\n// RECOVER ORIGINAL REQUEST CONTEXT\n// ======================================================\n\nconst requestItem =\n  $(\"When Executed by Another Workflow\").first()?.json || {};\n\nconst business =\n  requestItem.business || {};\n\nconst content =\n  requestItem.content || {};\n\n// ======================================================\n// Determine research topic\n// Priority:\n// 1. Original content.topic\n// 2. Agent query_topic\n// 3. Safe fallback\n// ======================================================\n\nconst query =\n  content.topic ||\n  agentOutput.query_topic ||\n  \"Unknown topic\";\n\n// ======================================================\n// DETERMINISTIC EMPTY RESEARCH PACKAGE\n// ======================================================\n\nreturn [\n  {\n    json: {\n      output: {\n        query_topic: String(query),\n\n        execution_timestamp:\n          new Date().toISOString(),\n\n        metadata: {\n          research_scope: \"mixed\",\n          recent_updates_found: false,\n          overall_confidence: \"Low\"\n        },\n\n        knowledge: {\n          executive_summary:\n            \"No verifiable information could be retrieved.\",\n\n          key_findings: [],\n\n          verified_facts: [],\n\n          core_concepts: [],\n\n          important_entities: [],\n\n          major_developments: [],\n\n          practical_implications: [],\n\n          statistics: [],\n\n          expert_insights: [],\n\n          future_outlook: [],\n\n          risks_or_limitations: [],\n\n          common_questions: []\n        },\n\n        sources: []\n      },\n\n      _enforced_empty: true\n    }\n  }\n];"
+      },
+      "id": "f4b573de-649a-4e26-89d0-08599d4dd8ba",
+      "name": "Enforce Tool Results",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        192,
+        32
+      ]
+    },
+    {
+      "parameters": {
+        "query": "={{ $('When Executed by Another Workflow').item.json.content.topic }}",
+        "options": {}
+      },
+      "type": "@tavily/n8n-nodes-tavily.tavilyTool",
+      "typeVersion": 1,
+      "position": [
+        -160,
+        576
+      ],
+      "id": "225a705b-a3a6-4049-9e93-1c2667cd2a2a",
+      "name": "Search in Tavily",
+      "credentials": {
+        "tavilyApi": {
+          "id": "qdQnGAF1GSJkYHCl",
+          "name": "Tavily account"
+        }
+      }
+    }
+  ],
+  "pinData": {
+    "When Executed by Another Workflow": [
+      {
+        "json": {
+          "business": {
+            "id": "3bed3ffb-eeca-4e55-939c-1fac3a1392fc",
+            "name": "Elevate-X",
+            "type": "Education Technology (EdTech), Professional Training",
+            "about": "Elevate-X is an engineering-first learning ecosystem focused on building engineers through strong foundations, systems thinking, AI-assisted engineering, debugging and production thinking, mentorship, industry workshops, and real-world execution. It prepares students, graduates, and aspiring engineers to perform at global engineering standards.",
+            "products": "An engineering-first learning ecosystem that develops globally capable engineers through foundations, systems thinking, AI-assisted engineering, mentorship, and real-world execution.",
+            "website": "https://www.elevate-x.co",
+            "logo": "",
+            "targetAudience": "University Students, Final-Year Students, Fresh Graduates, Software Engineers, AI Engineers, Developers & Tech Professionals",
+            "brandTone": "Professional, Educational, Engineering-First, Practical & Inspirational",
+            "industry": "Education Technology (EdTech), Professional Training",
+            "brandStyle": "Professional, Educational, Engineering-First, Practical & Inspirational"
+          },
+          "content": {
+            "topic": "Elevate-X X Fellowship: Learn, Build, Debug, and Think Like an Engineer",
+            "platforms": [
+              "LinkedIn",
+              "Facebook"
+            ],
+            "goal": "Lead Generation",
+            "cta": "Explore Elevate-X / Apply Now",
+            "userPrompt": "Create an informative and compelling promotional campaign focused on the Elevate-X X Fellowship. Use Elevate-X and its official website, https://www.elevate-x.co, as the primary business context and source of truth. Explain how the X Fellowship goes beyond conventional courses and tutorials by helping participants develop strong engineering foundations, systems thinking, debugging ability, production thinking, AI-assisted engineering skills, practical execution, and an engineering mindset. Highlight Engineering Foundations, Systems Thinking, AI-Assisted Engineering, Debugging & Production Thinking, Career Mentorship, Industry Workshops, Real-world Projects, and Engineering Mindset Training. Clearly explain what makes the X Fellowship different from typical training platforms and who it is designed for, especially university students, final-year students, fresh graduates, software engineers, AI engineers, developers, and aspiring engineers. Make the content educational, practical, credible, inspiring, and action-oriented rather than a generic advertisement. Avoid exaggerated claims, guaranteed job or career outcomes, unsupported statistics, and excessive marketing language. Encourage relevant audiences to explore Elevate-X and apply. Adapt the messaging appropriately for LinkedIn and Facebook while maintaining a consistent Elevate-X engineering-first brand voice.",
+            "feedback": ""
+          }
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      }
+    ]
+  },
+  "connections": {
+    "When Executed by Another Workflow": {
+      "main": [
+        [
+          {
+            "node": "Knowledge Intelligence Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Knowledge Intelligence Agent": {
+      "main": [
+        [
+          {
+            "node": "Enforce Tool Results",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "MiniMax Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Knowledge Intelligence Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Knowledge Intelligence Agent",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Search in Tavily": {
+      "ai_tool": [
+        [
+          {
+            "node": "Knowledge Intelligence Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": true
+  },
+  "versionId": "94048ab8-1ecc-4d8a-875b-0248c82e0131",
+  "meta": {
+    "instanceId": "2b3a5162d7fb2e0d2f3fc7a542bf1cc8a3ec09153819668f5e9c80bbf43fdbe1"
+  },
+  "nodeGroups": [],
+  "id": "LEZJZ6QmGbf4uJO3",
+  "tags": []
+}
