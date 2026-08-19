@@ -402,36 +402,128 @@ NGROK_AUTHTOKEN=your-ngrok-authtoken
 ### Prerequisites
 
 - Python 3.13+
+- Node.js 18+ (for frontend development)
 - PostgreSQL 16
 - Docker & Docker Compose (for full stack)
+- Git
 
-### Local Development
+### Quick Start (Docker Compose - Full Stack)
 
-```bash
-# Install dependencies
-uv sync --group dev
-
-# Run the API server
-uv run uvicorn app.main:app --reload --port 8000
-
-# Or with all dependencies
-uv run --group dev uvicorn app.main:app --reload --port 8000
-```
-
-### Docker Compose (Full Stack)
+This is the fastest way to get everything running:
 
 ```bash
-# Start all services (postgres, n8n, caddy, ngrok)
+# 1. Clone the repository
+git clone <repo-url>
+cd Social-Content-Automation
+
+# 2. Create environment file
+cp .env.example .env
+
+# 3. Edit .env and fill in required values:
+#    - SECRET_KEY: Generate with `openssl rand -hex 32`
+#    - POSTGRES_PASSWORD: Choose a strong password
+#    - NGROK_AUTHTOKEN: Get from ngrok.com (free account)
+#    - N8N_WEBHOOK_SECRET: Generate with `openssl rand -hex 32`
+
+# 4. Start all services
 docker compose up -d
 
-# View logs
-docker compose logs -f
+# 5. Verify services are running
+docker compose ps
+
+# 6. Access the applications:
+#    - Frontend:     http://localhost:3000
+#    - Backend API:  http://localhost:8000
+#    - API Docs:     http://localhost:8000/docs
+#    - n8n Editor:   http://localhost:5678
+#    - ngrok UI:     http://localhost:4040
+```
+
+### Local Development Setup
+
+#### Backend Only
+
+```bash
+# 1. Install uv (if not installed)
+curl -LsSf https://astral.sh/uv/install.sh | sh
+
+# 2. Install dependencies
+uv sync --group dev
+
+# 3. Create .env file
+cp .env.example .env
+# Edit .env with your values
+
+# 4. Run database migrations (create tables)
+uv run alembic upgrade head
+
+# 5. Start the backend server
+uv run uvicorn app.main:app --reload --port 8000
+```
+
+#### Frontend Only (with existing backend)
+
+```bash
+# 1. Go to frontend directory
+cd frontend
+
+# 2. Install dependencies
+npm install
+
+# 3. Start development server
+npm run dev
+```
+
+#### Full Local Stack (Backend + Frontend + Database)
+
+```bash
+# Start PostgreSQL only via docker
+docker compose up -d postgres
+
+# Or run PostgreSQL locally on port 5432
+
+# Start backend
+uv run uvicorn app.main:app --reload --port 8000
+
+# In another terminal, start frontend
+cd frontend && npm install && npm run dev
+```
+
+### Docker Compose Services
+
+| Service | Port | Description |
+|---------|------|-------------|
+| `postgres` | 5434 | PostgreSQL 16 database |
+| `backend` | 8000 | FastAPI backend |
+| `frontend` | 3000 | React frontend |
+| `n8n` | 5678 | Workflow automation |
+| `caddy` | 80/443 | Reverse proxy |
+| `ngrok` | 4040 | Public URL tunnel |
+
+### Useful Docker Commands
+
+```bash
+# Start all services
+docker compose up -d
+
+# View logs for a specific service
+docker compose logs -f backend
+docker compose logs -f n8n
 
 # Restart a specific service
 docker compose restart n8n
 
 # Stop all services
 docker compose down
+
+# Stop and remove volumes (CLEAN slate)
+docker compose down -v
+
+# Rebuild after code changes
+docker compose up -d --build
+
+# Access PostgreSQL database
+docker compose exec postgres psql -U socialhandler -d socialhandler
 ```
 
 ### API Documentation
@@ -692,6 +784,57 @@ If you need a permanent public URL instead of ngrok's temporary URLs:
 | localhost.run | ✅ Yes | No account needed |
 
 ---
+
+## Troubleshooting
+
+### Common Issues
+
+#### Database Connection Failed
+```
+Error: could not connect to server
+```
+**Solution:** Ensure PostgreSQL is running. If using Docker:
+```bash
+docker compose up -d postgres
+```
+
+#### ngrok Failed to Start
+```
+Error: Your account is limited to 1 tunnel
+```
+**Solution:** 
+1. Get a free ngrok account at https://ngrok.com
+2. Get your auth token from the ngrok dashboard
+3. Add it to `.env` as `NGROK_AUTHTOKEN=your-token`
+4. Restart: `docker compose up -d ngrok`
+
+#### Frontend Can't Connect to Backend
+The frontend communicates through the Caddy proxy. Ensure:
+1. Caddy is running: `docker compose ps caddy`
+2. Frontend env has `VITE_API_URL=/api`
+3. Caddyfile is correctly configured
+
+#### n8n Can't Reach Backend
+n8n needs the public ngrok URL to communicate with Discord. Update:
+1. Set `N8N_WEBHOOK_URL_UI=https://your-ngrok-url` in .env
+2. Set `N8N_ENFORCE_SETTINGS_FILE_PERMISSIONS=false` in docker-compose
+
+#### Port Already in Use
+```
+Error: port 8000 is already in use
+```
+**Solution:** Either stop the existing service or change the port in docker-compose.yml
+
+### Reset Everything
+
+```bash
+# Complete reset (WARNING: deletes all data)
+docker compose down -v
+docker compose up -d
+
+# Recreate database tables only
+docker compose exec backend uv run alembic upgrade head
+```
 
 ## License
 
