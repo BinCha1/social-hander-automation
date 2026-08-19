@@ -397,6 +397,252 @@ NGROK_AUTHTOKEN=your-ngrok-authtoken
 
 ---
 
+## Credentials Setup Guide
+
+This guide walks through creating all required credentials for the project.
+
+### 1. PostgreSQL
+
+**Purpose:** Primary database for storing users, content, and credentials.
+
+**Setup:** PostgreSQL runs via Docker Compose - no external account needed.
+
+**Generated Values:**
+- `POSTGRES_USER`: Use `socialhandler`
+- `POSTGRES_PASSWORD`: Create a strong password (min 16 chars)
+- `POSTGRES_DB`: Use `socialhandler`
+
+---
+
+### 2. JWT Secret Key
+
+**Purpose:** Secures JWT tokens for authentication.
+
+**Generate:**
+```bash
+openssl rand -hex 32
+```
+
+**Set in `.env`:**
+```env
+SECRET_KEY=<generated-value>
+```
+
+---
+
+### 3. ngrok
+
+**Purpose:** Creates public URLs for Discord to send webhook events to n8n.
+
+**Setup:**
+1. Go to https://ngrok.com
+2. Sign up for free account
+3. Navigate to **Getting Started → Your Authtoken**
+4. Copy your auth token
+
+**Set in `.env`:**
+```env
+NGROK_AUTHTOKEN=<your-token>
+```
+
+**Note:** The free tier allows 1 tunnel at a time. The project is configured with a specific subdomain - contact the maintainer for the existing token or set up your own.
+
+---
+
+### 4. Discord Developer Portal
+
+**Purpose:** Discord bot for sending content approval messages to users.
+
+**Setup:**
+
+1. Go to https://discord.com/developers/applications
+2. Click **New Application** → Name it (e.g., "PostFlow Bot")
+3. Go to **General Information**:
+   - Copy **Application ID**
+   - Copy **Public Key** → Set as `DISCORD_PUBLIC_KEY` in `.env`
+4. Go to **Bot**:
+   - Click **Reset Token** → Copy token → Set as `DISCORD_BOT_TOKEN` in frontend/`.env`
+   - Enable these **Privileged Gateway Intents**:
+     - ✅ MESSAGE CONTENT INTENT
+     - ✅ PRESENCE INTENT
+     - ✅ SERVER MEMBERS INTENT
+5. Go to **OAuth2 → URL Generator**:
+   - Check scopes: `bot`, `applications.commands`
+   - Check permissions: `Send Messages`, `Embed Links`, `Use Slash Commands`
+   - Copy generated URL and invite bot to your Discord server
+
+**Set in `.env` (frontend):**
+```env
+DISCORD_BOT_TOKEN=<your-bot-token>
+```
+
+**Set in `.env` (root):**
+```env
+DISCORD_PUBLIC_KEY=<your-public-key>
+```
+
+---
+
+### 5. Meta Business (Facebook & Instagram)
+
+**Purpose:** Post content to Facebook Pages and Instagram accounts.
+
+**Setup:**
+
+1. Go to https://developers.facebook.com
+2. Click **My Apps** → **Create App** → Select **Business** type
+3. Add **Facebook Login** product (for user authentication flow)
+4. Go to **App Settings → Basic**:
+   - Copy **App ID** and **App Secret**
+5. Set up a **Test App** or submit for review to get extended permissions
+
+**OAuth Flow for Users:**
+The app uses OAuth 2.0. Users connect their accounts via:
+```
+GET https://www.facebook.com/v18.0/dialog/oauth?client_id=<APP_ID>&redirect_uri=<REDIRECT_URI>&scope=pages_read_engagement,instagram_basic,instagram_content_publish
+```
+
+**Access Token Setup:**
+1. Create a Facebook Page
+2. Go to **Graph API Explorer**: https://developers.facebook.com/tools/explorer/
+3. Select your app → Generate User Access Token
+4. Request permissions: `pages_read_engagement`, `instagram_basic`, `instagram_content_publish`
+5. Authorize and copy the token
+
+**Page ID Extraction:**
+```bash
+curl -X GET "https://graph.facebook.com/v18.0/me/accounts?access_token=<TOKEN>"
+```
+
+---
+
+### 6. LinkedIn
+
+**Purpose:** Post content to LinkedIn Pages.
+
+**Setup:**
+
+1. Go to https://developer.linkedin.com
+2. Create an **App** (must be verified business first)
+3. Under **Auth** tab:
+   - Add **OAuth 2.0 Redirect URLs** (e.g., `http://localhost:3000/linkedin/callback`)
+   - Copy **Client ID** and **Client Secret**
+4. Request these **Products**:
+   - `Share on LinkedIn`
+   - `LinkedIn Login`
+5. Verify your app (requires LinkedIn Business verification)
+
+**OAuth Flow:**
+```
+GET https://www.linkedin.com/oauth/v2/authorization?response_type=code&client_id=<CLIENT_ID>&redirect_uri=<REDIRECT_URI>&scope=w_member_social,r_liteprofile
+```
+
+---
+
+### 7. Threads (Meta)
+
+**Purpose:** Post content to Instagram Threads.
+
+**Note:** Threads uses the same Meta platform as Instagram. The Instagram access token works for Threads API.
+
+**Setup:**
+1. Follow Instagram setup above
+2. Get Instagram Business Account ID
+3. Request `threads_content_publish` permission from Meta
+
+---
+
+### 8. n8n
+
+**Purpose:** Workflow automation for content generation.
+
+**Setup (runs via Docker Compose):**
+
+1. Access n8n UI at http://localhost:5678
+2. On first run, create your admin account
+3. Create workflows:
+   - **Instant Content Workflow**: Receives webhook from backend, generates content
+   - **Scheduled Content Workflow**: Cron-based publishing
+   - **Approval Workflow**: Handles Discord approval callbacks
+
+**Webhook URLs (update in n8n and .env):**
+```env
+N8N_WEBHOOK_URL=https://<ngrok-url>/webhook/<instant-workflow-id>
+N8N_SCHEDULE_WEBHOOK_URL=https://<ngrok-url>/webhook/<schedule-workflow-id>
+N8N_APPROVAL_WEBHOOK_URL=https://<ngrok-url>/webhook/<approval-workflow-id>
+N8N_WEBHOOK_SECRET=<generate-with-openssl-rand-hex-32>
+```
+
+**n8n → Discord Bot Token (for sending messages):**
+Use the same Discord Bot Token from step 4.
+
+---
+
+### 9. Cloudinary (Optional)
+
+**Purpose:** Media storage and transformation for generated images/videos.
+
+**Setup:**
+
+1. Go to https://cloudinary.com
+2. Sign up for free account
+3. Go to **Dashboard** → Copy:
+   - **Cloud Name** → `CLOUDINARY_CLOUD_NAME`
+   - **Upload Preset** → Create in **Settings → Upload** → Upload presets → Add upload preset
+
+**Set in `.env`:**
+```env
+CLOUDINARY_CLOUD_NAME=<your-cloud-name>
+CLOUDINARY_UPLOAD_PRESET=<your-upload-preset>
+```
+
+---
+
+### Quick Reference: Required Credentials
+
+| Service | Required For | Where to Get |
+|---------|-------------|--------------|
+| PostgreSQL | Database | Docker Compose (self-contained) |
+| `SECRET_KEY` | JWT auth | `openssl rand -hex 32` |
+| ngrok | Discord→n8n tunnel | ngrok.com |
+| Discord Public Key | Discord interactions | Discord Developer Portal |
+| Discord Bot Token | Bot messaging | Discord Developer Portal |
+| Facebook App | Social posting | developers.facebook.com |
+| Instagram Token | Social posting | Via Facebook Graph API |
+| LinkedIn App | Social posting | developer.linkedin.com |
+| n8n | Workflows | Docker Compose |
+| Cloudinary | Media uploads | cloudinary.com (optional) |
+
+---
+
+### Environment Files
+
+The project uses **two** `.env` files:
+
+**1. Root `.env` (Backend & Docker):**
+```env
+SECRET_KEY=<jwt-secret>
+POSTGRES_USER=socialhandler
+POSTGRES_PASSWORD=<db-password>
+POSTGRES_DB=socialhandler
+DATABASE_URL=postgresql+psycopg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@localhost:5434/${POSTGRES_DB}
+DISCORD_PUBLIC_KEY=<discord-public-key>
+N8N_WEBHOOK_SECRET=<n8n-secret>
+N8N_WEBHOOK_URL=<ngrok-url>/webhook/<instant-id>
+N8N_SCHEDULE_WEBHOOK_URL=<ngrok-url>/webhook/<schedule-id>
+N8N_APPROVAL_WEBHOOK_URL=<ngrok-url>/webhook/<approval-id>
+N8N_WEBHOOK_URL_UI=<ngrok-url>
+NGROK_AUTHTOKEN=<ngrok-token>
+```
+
+**2. Frontend `.env` (in `/frontend` directory):**
+```env
+VITE_API_URL=/api
+DISCORD_BOT_TOKEN=<discord-bot-token>
+```
+
+---
+
 ## Running the Application
 
 ### Prerequisites
