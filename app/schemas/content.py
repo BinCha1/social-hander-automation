@@ -78,3 +78,11 @@ class ContentAutomationResponse(ContentResponse):
     media: dict | None = None
     credentials: dict | None = None
     payload_error: str | None = None
+
+
+class PaginatedContentResponse(BaseModel):
+    items: list[ContentResponse | ContentAutomationResponse]
+    total: int
+    page: int
+    page_size: int
+    total_pages: int

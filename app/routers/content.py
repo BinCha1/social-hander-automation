@@ -2,7 +2,7 @@ import httpx
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
-from sqlalchemy import select
+from sqlalchemy import desc, select
 from sqlalchemy.orm import Session
 
 from app.core.config import get_settings
@@ -21,6 +21,7 @@ from app.schemas.content import (
     ContentResponse,
     ContentStatusUpdate,
     ContentUpdate,
+    PaginatedContentResponse,
 )
 from app.schemas.credentials import SUPPORTED_PLATFORMS
 
@@ -191,26 +192,44 @@ def create_content(
     return content
 
 
-@router.get("", response_model=list[ContentResponse | ContentAutomationResponse])
+@router.get("", response_model=PaginatedContentResponse)
 def list_content(
     actor: Annotated[User | str | None, Depends(get_request_actor)],
     db: Annotated[Session, Depends(get_db)],
     status_filter: str | None = Query(default=None, alias="status"),
     mode: str | None = None,
-    limit: int = Query(default=50, ge=1, le=500),
-) -> list:
+    page: int = Query(default=1, ge=1),
+    page_size: int = Query(default=10, ge=1, le=100),
+) -> PaginatedContentResponse:
     _ensure_actor(actor)
-    query = select(Content)
+
+    count_query = select(Content)
+    query = select(Content).order_by(desc(Content.created_at))
+
     if isinstance(actor, User):
+        count_query = count_query.where(Content.user_id == actor.id)
         query = query.where(Content.user_id == actor.id)
     if status_filter:
+        count_query = count_query.where(Content.status == status_filter)
         query = query.where(Content.status == status_filter)
     if mode:
+        count_query = count_query.where(Content.mode == mode)
         query = query.where(Content.mode == mode)
-    contents = list(db.execute(query.limit(limit)).scalars())
-    if isinstance(actor, str):
-        return [_automation_response(db, c) for c in contents]
-    return contents
+
+    total = len(list(db.execute(count_query).scalars().all()))
+    offset = (page - 1) * page_size
+    contents = list(db.execute(query.offset(offset).limit(page_size)).scalars().all())
+
+    items = [_automation_response(db, c) for c in contents] if isinstance(actor, str) else contents
+    total_pages = (total + page_size - 1) // page_size if total > 0 else 1
+
+    return PaginatedContentResponse(
+        items=items,
+        total=total,
+        page=page,
+        page_size=page_size,
+        total_pages=total_pages,
+    )
 
 
 @router.get("/{content_id}", response_model=ContentResponse)

@@ -1,0 +1,9 @@
+.git
+*.md
+frontend/
+tests/
+node_modules/
+.env
+.env.local
+docker-compose.yml
+Caddyfile

@@ -1,5 +1,6 @@
 from datetime import datetime, timedelta, timezone
 from typing import Annotated
+import secrets
 
 import hmac
 import jwt
@@ -22,10 +23,8 @@ ALGORITHM = "HS256"
 
 password_hash = PasswordHash.recommended()
 
-# Extracts the Bearer token from the Authorization header.
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/token")
 
-# Timing-attack guard: verify against a dummy hash when the user is missing.
 DUMMY_HASH = password_hash.hash("dummypassword")
 
 
@@ -50,6 +49,10 @@ def decode_access_token(token: str) -> dict | None:
         return jwt.decode(token, settings.secret_key, algorithms=[ALGORITHM])
     except InvalidTokenError:
         return None
+
+
+def generate_password_reset_token() -> str:
+    return secrets.token_urlsafe(32)
 
 
 fernet_key = base64.urlsafe_b64encode(

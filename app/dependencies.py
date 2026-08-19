@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.core.security import decode_access_token, oauth2_scheme, verify_n8n_secret
 from app.models.user import User
+from app.models.blacklisted_token import BlacklistedToken
 
 
 def get_current_user(
@@ -18,6 +19,12 @@ def get_current_user(
         detail="Could not validate credentials",
         headers={"WWW-Authenticate": "Bearer"},
     )
+    is_blacklisted = db.execute(
+        select(BlacklistedToken).where(BlacklistedToken.token == token)
+    ).scalar_one_or_none()
+    if is_blacklisted:
+        raise credentials_exception
+
     payload = decode_access_token(token)
     if payload is None or "sub" not in payload:
         raise credentials_exception
@@ -45,7 +52,13 @@ def get_request_actor(
         return "n8n"
     auth = request.headers.get("Authorization", "")
     if auth.startswith("Bearer "):
-        payload = decode_access_token(auth[7:])
+        token = auth[7:]
+        is_blacklisted = db.execute(
+            select(BlacklistedToken).where(BlacklistedToken.token == token)
+        ).scalar_one_or_none()
+        if is_blacklisted:
+            return None
+        payload = decode_access_token(token)
         if payload and "sub" in payload:
             user = db.execute(
                 select(User).where(User.username == payload["sub"])

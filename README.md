@@ -581,6 +581,118 @@ When content is created with `mode=instant`, the API sends this payload to `N8N_
 
 ---
 
+## Why ngrok is Used in This Project
+
+### The Problem: Private vs Public URLs
+
+n8n runs inside Docker at `http://n8n:5678`. This is a **private address** only accessible within the Docker network. External services like Discord cannot reach it.
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                        Your Computer                             │
+│                                                                  │
+│   ┌──────────────┐         ┌──────────────┐                    │
+│   │   Backend    │ ──────> │     n8n      │                    │
+│   │  (port 8000) │   ✅    │ (port 5678)  │                    │
+│   └──────────────┘         └──────────────┘                    │
+│          │                         │                             │
+│          │                         │                             │
+│          │                    Private URL                        │
+│          │                   (Docker network)                    │
+└──────────┼──────────────────────────────────────────────────────┘
+           │
+           │ External services CANNOT access
+           │ http://n8n:5678 or http://backend:8000
+           │
+           ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                      INTERNET (Discord, etc.)                    │
+│                                                                  │
+│   Discord ──X──> http://n8n:5678/webhook/...  ❌ Not reachable   │
+│                                                                  │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+### The Solution: ngrok Tunnel
+
+ngrok creates a **public URL** that tunnels traffic to your local n8n instance:
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                        Your Computer                             │
+│                                                                  │
+│   ┌──────────────┐         ┌──────────────┐                    │
+│   │   Backend    │ ──────> │     n8n      │                    │
+│   │  (port 8000) │         │ (port 5678)  │                    │
+│   └──────────────┘         └──────────────┘                    │
+│          │                         │                             │
+│          │                         │                             │
+│          │                    Private URL                        │
+│          │                   (Docker network)                   │
+│          │                         │                             │
+│          │                         ▼                             │
+│          │                  ┌──────────────┐                    │
+│          │                  │    ngrok     │                    │
+│          │                  │   (tunnel)   │                    │
+│          │                  └──────────────┘                    │
+│          │                         │                             │
+└──────────┼─────────────────────────┼────────────────────────────┘
+           │                         │
+           │                         │  Public URL
+           │                         │  https://xxx.ngrok-free.dev
+           ▼                         ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                      INTERNET (Discord, etc.)                    │
+│                                                                  │
+│   Discord ───────> https://xxx.ngrok-free.dev/webhook/...  ✅   │
+│                                                                  │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+### What Works WITHOUT ngrok (Internal Docker Network)
+
+| Communication | URL | Status |
+|---------------|-----|--------|
+| Backend → n8n | `http://n8n:5678/webhook/...` | ✅ Works |
+| Frontend → Backend | `http://backend:8000/api/...` | ✅ Works |
+| Caddy → Backend | `http://backend:8000` | ✅ Works |
+| You → n8n UI | `http://localhost:5678` | ✅ Works |
+
+### What Requires ngrok (or similar public URL)
+
+| Communication | Why ngrok Needed |
+|---------------|------------------|
+| Discord → n8n webhook | Discord's servers need a public URL to send events |
+| External services → n8n | Any remote system triggering workflows |
+| Mobile apps → n8n | Apps outside your network need public endpoints |
+
+### Current Configuration in This Project
+
+| Service | Internal URL | Public URL (via ngrok) |
+|---------|-------------|------------------------|
+| n8n | `http://n8n:5678` | `https://captivity-scenic-enrage.ngrok-free.dev` |
+| Backend | `http://backend:8000` | Not exposed (only internal) |
+| Frontend | `http://frontend:3000` | Not exposed (only internal) |
+
+### When You DON'T Need ngrok
+
+- **Manual workflow testing**: Open n8n at `http://localhost:5678` and click "Execute Workflow"
+- **Backend → n8n triggers**: The backend uses `http://n8n:5678` internally, no external URL needed
+- **Development on localhost**: All services accessible from your machine
+
+### Alternatives to ngrok
+
+If you need a permanent public URL instead of ngrok's temporary URLs:
+
+| Service | Free Tier | Notes |
+|---------|-----------|-------|
+| Cloudflare Tunnel | ✅ Yes | Permanent URLs, fast |
+| TailScale | ✅ Yes | VPN-based, secure |
+| GitHub Codespaces | ✅ Yes | Built-in port forwarding |
+| localhost.run | ✅ Yes | No account needed |
+
+---
+
 ## License
 
 Private project - All rights reserved.

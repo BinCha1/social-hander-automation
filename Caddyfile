@@ -3,9 +3,9 @@
 }
 
 :80 {
-    # Backend (FastAPI on the host) - Discord interactions + API
+    # Backend (FastAPI) - Discord interactions + API
     handle /api/* {
-        reverse_proxy host.docker.internal:8000
+        reverse_proxy backend:8000
     }
 
     # Everything else goes to n8n (editor, webhooks, MCP server)

@@ -1,0 +1,92 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * {
+    @apply border-cream-200;
+  }
+  
+  html {
+    @apply scroll-smooth;
+  }
+  
+  body {
+    @apply bg-navy-950 text-black font-sans;
+    min-height: 100vh;
+  }
+}
+
+@layer components {
+  .btn-primary {
+    @apply bg-accent-500 hover:bg-accent-600 text-white font-semibold py-3 px-6 rounded-lg transition-all duration-300;
+    @apply hover:shadow-lg hover:shadow-accent-500/25 active:scale-95;
+  }
+  
+  .btn-secondary {
+    @apply bg-navy-800 hover:bg-navy-700 text-cream-50 font-semibold py-3 px-6 rounded-lg border border-navy-700 transition-all duration-300;
+    @apply hover:border-accent-500/50 active:scale-95;
+  }
+  
+  .btn-ghost {
+    @apply bg-transparent hover:bg-navy-800 text-cream-50 font-medium py-3 px-6 rounded-lg transition-all duration-300;
+    @apply hover:text-white active:scale-95;
+  }
+  
+  .card {
+    @apply bg-navy-900/80 backdrop-blur-sm border border-navy-800 rounded-2xl p-6;
+    @apply hover:border-accent-500/30 transition-all duration-300;
+  }
+  
+  .card-glow {
+    @apply card hover:shadow-xl hover:shadow-accent-500/10;
+  }
+  
+  .input-field {
+    @apply w-full bg-navy-900 border border-navy-700 rounded-lg px-4 py-3 text-cream-50 placeholder-cream-200/50;
+    @apply focus:outline-none focus:border-accent-500 focus:ring-1 focus:ring-accent-500/50;
+    @apply transition-all duration-200;
+  }
+  
+  .label {
+    @apply block text-sm font-medium text-cream-100 mb-2;
+  }
+  
+  .section-padding {
+    @apply py-16 md:py-20 lg:py-24;
+  }
+  
+  .container-custom {
+    @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8;
+  }
+  
+  .text-gradient {
+    @apply bg-gradient-to-r from-accent-400 to-accent-600 bg-clip-text text-transparent;
+  }
+  
+  .badge {
+    @apply inline-flex items-center px-3 py-1 rounded-full text-xs font-medium;
+  }
+  
+  .badge-primary {
+    @apply badge bg-accent-500/20 text-accent-400 border border-accent-500/30;
+  }
+  
+  .badge-success {
+    @apply badge bg-green-500/20 text-green-400 border border-green-500/30;
+  }
+  
+  .badge-warning {
+    @apply badge bg-yellow-500/20 text-yellow-400 border border-yellow-500/30;
+  }
+  
+  .badge-error {
+    @apply badge bg-red-500/20 text-red-400 border border-red-500/30;
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+}
