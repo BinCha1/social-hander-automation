@@ -23,6 +23,7 @@ class DiscordConfig(Base):
     public_key: Mapped[str | None] = mapped_column(Text)
     application_id: Mapped[str | None] = mapped_column(String(255), index=True)
     channel_id: Mapped[str | None] = mapped_column(Text)
+    webhook_url: Mapped[str] = mapped_column(Text, nullable=False)
     connection_status: Mapped[str] = mapped_column(
         String(50), default="connected", nullable=False
     )

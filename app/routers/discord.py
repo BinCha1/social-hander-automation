@@ -134,6 +134,8 @@ async def upsert_discord_config(
         config.application_id = payload.application_id
     if payload.channel_id is not None:
         config.channel_id = payload.channel_id
+    if payload.webhook_url is not None:
+        config.webhook_url = payload.webhook_url
     ok, detail = await _validate_discord_token(payload.bot_token)
     config.connection_status = "connected" if ok else "error"
     config.last_error = None if ok else detail
@@ -174,6 +176,8 @@ async def update_discord_config(
         config.application_id = payload.application_id
     if payload.channel_id is not None:
         config.channel_id = payload.channel_id
+    if payload.webhook_url is not None:
+        config.webhook_url = payload.webhook_url
     if payload.is_active is not None:
         config.is_active = payload.is_active
     db.commit()

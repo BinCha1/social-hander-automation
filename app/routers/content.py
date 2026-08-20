@@ -66,6 +66,7 @@ def _resolve_credentials(db: Session, user_id: str, platforms: list[str]) -> dic
     if discord_config and discord_config.is_active:
         credentials["discord_bot_token"] = decrypt_credential(discord_config.encrypted_bot_token)
         credentials["discord_channel_id"] = discord_config.channel_id
+        credentials["discord_webhook_url"] = discord_config.webhook_url
     if get_settings().cloudinary_cloud_name:
         credentials["cloudinary_cloud_name"] = get_settings().cloudinary_cloud_name
     if get_settings().cloudinary_upload_preset:

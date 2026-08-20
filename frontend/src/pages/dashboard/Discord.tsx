@@ -13,6 +13,7 @@ export default function DiscordIntegration() {
     bot_token: '',
     application_id: '',
     channel_id: '',
+    webhook_url: '',
     is_active: true,
   })
 
@@ -31,6 +32,7 @@ export default function DiscordIntegration() {
           bot_token: '',
           application_id: data.application_id || '',
           channel_id: data.channel_id || '',
+          webhook_url: data.webhook_url || '',
           is_active: data.is_active ?? true,
         })
       }
@@ -82,7 +84,7 @@ export default function DiscordIntegration() {
       })
       if (response.ok) {
         setConfig(null)
-        setFormData({ bot_token: '', application_id: '', channel_id: '', is_active: true })
+        setFormData({ bot_token: '', application_id: '', channel_id: '', webhook_url: '', is_active: true })
         setModal({ isOpen: true, type: 'success', title: 'Discord Disconnected', message: 'Your Discord integration has been removed.' })
       }
     } catch (error) {
@@ -198,6 +200,19 @@ export default function DiscordIntegration() {
                   placeholder="Channel for approvals"
                 />
               </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-semibold text-navy-800 mb-2">Webhook URL *</label>
+              <input
+                type="text"
+                value={formData.webhook_url}
+                onChange={(e) => setFormData({ ...formData, webhook_url: e.target.value })}
+                className="w-full bg-cream-50 border-2 border-cream-200 focus:border-accent-500 rounded-xl px-4 py-3 focus:outline-none focus:ring-4 focus:ring-accent-500/20"
+                placeholder="https://discord.com/api/webhooks/... (for publication log)"
+                required
+              />
+              <p className="text-xs text-navy-500 mt-1">Publication log will be sent to this Discord channel webhook</p>
             </div>
 
             <div className="flex gap-3 pt-4">
