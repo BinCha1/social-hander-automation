@@ -31,13 +31,14 @@ export default function DashboardHome() {
       })
       if (response.ok) {
         const data = await response.json()
-        setContents(data.slice(0, 5))
+        const items = data.items || []
+        setContents(items.slice(0, 5))
 
-        const total = data.length
-        const done = data.filter(c => c.status === 'done').length
-        const pending = data.filter(c => c.status === 'pending').length
-        const processing = data.filter(c => c.status === 'processing').length
-        const failed = data.filter(c => c.status === 'failed').length
+        const total = items.length
+        const done = items.filter(c => c.status === 'done').length
+        const pending = items.filter(c => c.status === 'pending').length
+        const processing = items.filter(c => c.status === 'processing').length
+        const failed = items.filter(c => c.status === 'failed').length
 
         setStats({ total, done, pending, processing, failed })
       }

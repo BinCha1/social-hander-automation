@@ -6,8 +6,7 @@
         "rule": {
           "interval": [
             {
-              "triggerAtHour": 23,
-              "triggerAtMinute": 50
+              "triggerAtHour": 9
             }
           ]
         }
@@ -258,8 +257,8 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.4,
       "position": [
-        1120,
-        288
+        1552,
+        368
       ]
     },
     {
@@ -359,19 +358,6 @@
       "maxTries": 2,
       "waitBetweenTries": 5000,
       "onError": "continueErrorOutput"
-    },
-    {
-      "parameters": {
-        "jsCode": "const outputItems = [];\n\nfor (const item of $input.all()) {\n  try {\n    let data =\n      item.json.output ??\n      item.json.observation ??\n      item.json.tool_calls;\n\n    if (Array.isArray(data)) {\n      data = data[0];\n    }\n\n    // If there is no agent output\n    if (data === undefined || data === null) {\n      throw new Error(\"No agent output received\");\n    }\n\n    // If output is already an object\n    if (typeof data === \"object\") {\n      // continue\n    } \n    // If output is a JSON string\n    else if (typeof data === \"string\") {\n      const trimmed = data.trim();\n\n      // Try JSON parsing\n      try {\n        data = JSON.parse(trimmed);\n      } catch {\n        // Agent returned plain text/error instead of JSON\n        outputItems.push({\n          json: {\n            agentError: true,\n            errorType: \"INVALID_AGENT_OUTPUT\",\n            errorMessage: trimmed,\n            rawOutput: data\n          }\n        });\n\n        continue;\n      }\n    }\n\n    // Unwrap nested output objects\n    while (\n      data &&\n      typeof data === \"object\" &&\n      data.output &&\n      typeof data.output === \"object\"\n    ) {\n      data = data.output;\n    }\n\n    outputItems.push({\n      json: {\n        ...data,\n        agentError: false\n      }\n    });\n\n  } catch (error) {\n    outputItems.push({\n      json: {\n        agentError: true,\n        errorType: \"PARSER_ERROR\",\n        errorMessage: error.message,\n        rawOutput: item.json\n      }\n    });\n  }\n}\n\nreturn outputItems;"
-      },
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [
-        -2368,
-        1552
-      ],
-      "id": "1bad22ad-5af5-4157-a40d-c0c40bdd956f",
-      "name": "Parse Agent JSON Output"
     },
     {
       "parameters": {
@@ -678,8 +664,8 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.5,
       "position": [
-        928,
-        288
+        1152,
+        368
       ],
       "id": "3fd2ad44-8c47-4cea-9229-3965654dca63",
       "name": "Prepare LinkedIn Image Payload"
@@ -717,8 +703,8 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.4,
       "position": [
-        1344,
-        128
+        1792,
+        224
       ],
       "id": "8003fe0d-f9bc-4de1-a336-ad71a79357a8",
       "name": "LinkedIn Initialize Upload"
@@ -744,8 +730,8 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.4,
       "position": [
-        1536,
-        336
+        2368,
+        352
       ],
       "id": "72912d9d-7deb-4359-a76a-d48727866451",
       "name": "LinkedIn - Upload Image Binary"
@@ -759,8 +745,8 @@
       "type": "n8n-nodes-base.merge",
       "typeVersion": 3.2,
       "position": [
-        1360,
-        336
+        2096,
+        352
       ],
       "id": "86b4bef7-0c78-4f10-8514-43b82fae846b",
       "name": "Merge"
@@ -798,8 +784,8 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.4,
       "position": [
-        1744,
-        336
+        2624,
+        352
       ],
       "id": "3c4ab1ed-7952-414b-bd67-2717308ddaa3",
       "name": "LinkedIn - Create Post"
@@ -1363,8 +1349,8 @@
       },
       "type": "n8n-nodes-base.stickyNote",
       "position": [
-        496,
-        112
+        336,
+        96
       ],
       "typeVersion": 1,
       "id": "be04201b-e079-45c0-9431-0d6fec19d282",
@@ -3719,7 +3705,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const logs = $input.all().map(item => item.json);\n\nconst now = new Date();\n\nconst date = now.toLocaleDateString('en-US', {\n  year: 'numeric',\n  month: 'short',\n  day: 'numeric'\n});\n\nconst time = now.toLocaleTimeString('en-US', {\n  hour: '2-digit',\n  minute: '2-digit'\n});\n\nconst lines = [\n  '## PUBLICATION REPORT',\n  `**${date} • ${time}**`,\n  '',\n  '━━━━━━━━━━━━━━━━━━━━'\n];\n\nfor (const log of logs) {\n  const platform = log.platform || 'Unknown';\n  const status = (log.status || 'unknown').toLowerCase();\n  const mediaType = (log.mediaType || 'none').toLowerCase();\n\n  const icon = status === 'published' ? '🟢' : '🔴';\n\n  const statusText =\n    status.charAt(0).toUpperCase() + status.slice(1);\n\n  const mediaText =\n    mediaType === 'none'\n      ? 'Text'\n      : mediaType.charAt(0).toUpperCase() + mediaType.slice(1);\n\n  lines.push(\n    `${icon} **${platform}**`,\n    `   Status: **${statusText}**`,\n    `   Media: **${mediaText}**`,\n    ''\n  );\n}\n\nlines.push('━━━━━━━━━━━━━━━━━━━━');\n\nreturn [\n  {\n    json: {\n      content: lines.join('\\n')\n    }\n  }\n];"
+        "jsCode": "const logs = $input.all().map(item => item.json);\n\nconst now = new Date();\n\nconst date = now.toLocaleDateString('en-US', {\n  year: 'numeric',\n  month: 'short',\n  day: 'numeric'\n});\n\nconst time = now.toLocaleTimeString('en-US', {\n  hour: '2-digit',\n  minute: '2-digit'\n});\n\nconst publications = logs.map(log => {\n  const platform = log.platform || 'Unknown';\n  const status = (log.status || 'unknown').toLowerCase();\n  const mediaType = (log.mediaType || 'none').toLowerCase();\n\n  const statusText =\n    status.charAt(0).toUpperCase() + status.slice(1);\n\n  const mediaText =\n    mediaType === 'none'\n      ? 'Text'\n      : mediaType.charAt(0).toUpperCase() + mediaType.slice(1);\n\n  return {\n    platform,\n    status,\n    statusText,\n    mediaType,\n    mediaText,\n    postId: log.postId || null,\n    publishedAt: log.publishedAt || null\n  };\n});\n\nreturn [\n  {\n    json: {\n      reportType: 'publication_report',\n      date,\n      time,\n      publications\n    }\n  }\n];"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -3733,10 +3719,10 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "https://discordapp.com/api/webhooks/1538966270161195128/2HcvfwMYGlyNzolmZWRRTTMONlVXx2oPQW1gAjJ7ycWlBoWlbmAzzdIP6Aca4zqcd-yB",
+        "url": "={{ $('Prepare Run').item.json.credentials.discord_webhook_url }}",
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{\n  {\n    content: $json.content\n  }\n}}",
+        "jsonBody": "={{\n{\n  content:\n    `## 📊 PUBLICATION REPORT\\n` +\n    `**${$json.date} • ${$json.time}**\\n\\n` +\n    `━━━━━━━━━━━━━━━━━━━━\\n\\n` +\n\n    $json.publications.map(post => {\n      const statusIcon =\n        post.status === 'published' ? '🟢' : '🔴';\n\n      return (\n        `${statusIcon} **${post.platform}**\\n` +\n        `   **Status:** ${post.statusText}\\n` +\n        `   **Media:** ${post.mediaText}\\n` +\n        `${post.postId ? `   **Post ID:** ${post.postId}\\n` : ''}` +\n        `${post.publishedAt ? `   **Published:** ${post.publishedAt}\\n` : ''}`\n      );\n    }).join('\\n') +\n\n    `━━━━━━━━━━━━━━━━━━━━`\n}\n}}",
         "options": {}
       },
       "type": "n8n-nodes-base.httpRequest",
@@ -3847,6 +3833,73 @@
       ],
       "id": "24e83422-90be-4bdc-89e7-4a9893a5d127",
       "name": "Combine Discord Messages"
+    },
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "=http://backend:8000/api/v1/content/{{ $('Prepare Run').item.json.job.contentId }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-N8N-Webhook-Secret",
+              "value": "n8n_sec_8923479182379412"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\n  \"status\": \"done\"\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        5216,
+        1472
+      ],
+      "id": "deabad27-ed69-48df-88b7-4fdc984b89c9",
+      "name": "Mark Status Completed"
+    },
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "=http://backend:8000/api/v1/content/{{ $('Prepare Run').item.json.job.contentId }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-N8N-Webhook-Secret",
+              "value": "n8n_sec_8923479182379412"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\n  \"status\": \"failed\"\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        -1744,
+        1232
+      ],
+      "id": "f97238a8-20e5-4c02-ba0f-7e80b5162ccf",
+      "name": "Mark Status failed"
+    },
+    {
+      "parameters": {
+        "jsCode": "const outputItems = [];\n\nfor (const item of $input.all()) {\n  try {\n    // Get the agent response\n    let data =\n      item.json.output ??\n      item.json.observation ??\n      item.json.tool_calls;\n\n    // If the response is an array, use the first element\n    if (Array.isArray(data)) {\n      data = data[0];\n    }\n\n    // Parse JSON string into an object\n    if (typeof data === \"string\") {\n      data = JSON.parse(data);\n    }\n\n    // Unwrap nested \"output\" objects\n    while (data && data.output) {\n      data = data.output;\n    }\n\n    outputItems.push({ json: data });\n\n  } catch (error) {\n    outputItems.push({\n      json: {\n        error: \"Failed to parse agent output\",\n        message: error.message,\n        raw: item.json,\n      },\n    });\n  }\n}\n\nreturn outputItems;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -2368,
+        1552
+      ],
+      "id": "0164a6a9-2887-4229-b580-ec2817d37045",
+      "name": "Parse Agent JSON Output"
     }
   ],
   "pinData": {},
@@ -3993,17 +4046,6 @@
           }
         ],
         []
-      ]
-    },
-    "Parse Agent JSON Output": {
-      "main": [
-        [
-          {
-            "node": "Error Msg1",
-            "type": "main",
-            "index": 0
-          }
-        ]
       ]
     },
     "Media Decision Router": {
@@ -4516,7 +4558,13 @@
     },
     "Linkedin Media Router": {
       "main": [
-        [],
+        [
+          {
+            "node": "Prepare LinkedIn Image Payload",
+            "type": "main",
+            "index": 0
+          }
+        ],
         [
           {
             "node": "Prepare LinkedIn Video Payload",
@@ -5130,6 +5178,39 @@
           }
         ]
       ]
+    },
+    "Send Discord Publication Log": {
+      "main": [
+        [
+          {
+            "node": "Mark Status Completed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Error Msg": {
+      "main": [
+        [
+          {
+            "node": "Mark Status failed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Agent JSON Output": {
+      "main": [
+        [
+          {
+            "node": "Error Msg1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
   "active": true,
@@ -5141,7 +5222,7 @@
     "timezone": "Asia/Kathmandu",
     "callerPolicy": "workflowsFromSameOwner"
   },
-  "versionId": "0ae357fa-66f3-46a6-a976-8360b094553e",
+  "versionId": "800c353d-04b7-4a05-b1c6-9c51e6928124",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "2b3a5162d7fb2e0d2f3fc7a542bf1cc8a3ec09153819668f5e9c80bbf43fdbe1"

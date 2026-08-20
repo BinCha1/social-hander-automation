@@ -3,7 +3,6 @@ import { motion } from 'framer-motion'
 import {
   Plus,
   Search,
-  Edit2,
   Trash2,
   Loader2,
   FileText,
@@ -23,18 +22,14 @@ import Modal from '../../components/Modal'
 const PLATFORM_ICONS = { instagram: Instagram, facebook: Facebook, linkedin: Linkedin, threads: Twitter }
 
 const API_MODE_OPTIONS = ['instant', 'schedule']
-const API_STATUS_OPTIONS = ['pending', 'processing', 'done', 'failed']
 const SUPPORTED_PLATFORMS = ['instagram', 'facebook', 'linkedin', 'threads']
-const API_GOAL_OPTIONS = ['Product Promotion', 'Brand Awareness', 'Engagement', 'Traffic']
 const PAGE_SIZE = 10
 
 export default function ContentManagement() {
   const [loading, setLoading] = useState(true)
   const [contents, setContents] = useState([])
   const [searchQuery, setSearchQuery] = useState('')
-  const [statusFilter, setStatusFilter] = useState('all')
   const [showCreateModal, setShowCreateModal] = useState(false)
-  const [editingContent, setEditingContent] = useState(null)
   const [modal, setModal] = useState({ isOpen: false, type: 'success', title: '', message: '' })
   const [confirmDelete, setConfirmDelete] = useState(null)
   const [saving, setSaving] = useState(false)
@@ -44,7 +39,7 @@ export default function ContentManagement() {
   const [formData, setFormData] = useState({
     topic: '',
     platforms: [],
-    goal: 'Product Promotion',
+    goal: '',
     cta: '',
     user_prompt: '',
     preferred_media: 'image',
@@ -52,11 +47,9 @@ export default function ContentManagement() {
     user_video_url: '',
     media_instructions: '',
     mode: 'schedule',
-    publish_date: '',
-    publish_time: '',
   })
 
-  useEffect(() => { fetchContents() }, [page, statusFilter])
+  useEffect(() => { fetchContents() }, [page])
 
   const fetchContents = async () => {
     try {
@@ -65,7 +58,6 @@ export default function ContentManagement() {
         page: page.toString(),
         page_size: PAGE_SIZE.toString(),
       })
-      if (statusFilter !== 'all') params.append('status', statusFilter)
       const response = await fetch(`/api/v1/content?${params}`, {
         headers: { 'Authorization': `Bearer ${token}` },
       })
@@ -93,8 +85,6 @@ export default function ContentManagement() {
     setSaving(true)
     try {
       const token = localStorage.getItem('token')
-      const url = editingContent ? `/api/v1/content/${editingContent.id}` : '/api/v1/content'
-      const method = editingContent ? 'PUT' : 'POST'
       
       const payload = {
         topic: formData.topic,
@@ -106,21 +96,17 @@ export default function ContentManagement() {
         user_image_url: formData.user_image_url || undefined,
         user_video_url: formData.user_video_url || undefined,
         media_instructions: formData.media_instructions || undefined,
-        mode: formData.mode,
-        publish_date: formData.publish_date || undefined,
-        publish_time: formData.publish_time || undefined,
       }
 
-      const response = await fetch(url, {
-        method,
+      const response = await fetch('/api/v1/content', {
+        method: 'POST',
         headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
       })
       
       if (response.ok) {
-        setModal({ isOpen: true, type: 'success', title: editingContent ? 'Content Updated!' : 'Content Created!', message: 'Your content has been saved successfully.' })
+        setModal({ isOpen: true, type: 'success', title: 'Content Created!', message: 'Your content has been saved successfully.' })
         setShowCreateModal(false)
-        setEditingContent(null)
         resetForm()
         fetchContents()
       } else {
@@ -152,44 +138,8 @@ export default function ContentManagement() {
     setConfirmDelete(null)
   }
 
-  const handleStatusChange = async (content, newStatus) => {
-    try {
-      const token = localStorage.getItem('token')
-      const response = await fetch(`/api/v1/content/${content.id}`, {
-        method: 'PATCH',
-        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status: newStatus }),
-      })
-      if (response.ok) {
-        setModal({ isOpen: true, type: 'success', title: 'Status Updated!', message: `Content status changed to ${newStatus}.` })
-        fetchContents()
-      }
-    } catch (error) {
-      setModal({ isOpen: true, type: 'error', title: 'Error', message: 'Failed to update status.' })
-    }
-  }
-
-  const handleEdit = (content) => {
-    setEditingContent(content)
-    setFormData({
-      topic: content.topic || '',
-      platforms: content.platforms || [],
-      goal: content.goal || 'Product Promotion',
-      cta: content.cta || '',
-      user_prompt: content.user_prompt || '',
-      preferred_media: content.preferred_media || 'image',
-      user_image_url: content.user_image_url || '',
-      user_video_url: content.user_video_url || '',
-      media_instructions: content.media_instructions || '',
-      mode: content.mode || 'schedule',
-      publish_date: content.publish_date || '',
-      publish_time: content.publish_time || '',
-    })
-    setShowCreateModal(true)
-  }
-
   const resetForm = () => {
-    setFormData({ topic: '', platforms: [], goal: 'Product Promotion', cta: '', user_prompt: '', preferred_media: 'image', user_image_url: '', user_video_url: '', media_instructions: '', mode: 'schedule', publish_date: '', publish_time: '' })
+    setFormData({ topic: '', platforms: [], goal: '', cta: '', user_prompt: '', preferred_media: 'image', user_image_url: '', user_video_url: '', media_instructions: '', mode: 'schedule' })
   }
 
   const togglePlatform = (platform) => {
@@ -217,11 +167,7 @@ export default function ContentManagement() {
             <input type="text" placeholder="Search content..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full pl-12 pr-4 py-3 bg-white border-2 border-cream-200 rounded-xl focus:border-accent-500 focus:outline-none focus:ring-4 focus:ring-accent-500/20" />
           </div>
           <div className="flex gap-3">
-            <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="px-4 py-3 bg-white border-2 border-cream-200 rounded-xl focus:border-accent-500 focus:outline-none">
-              <option value="all">All Status</option>
-              {API_STATUS_OPTIONS.map((s) => <option key={s} value={s}>{s.charAt(0).toUpperCase() + s.slice(1)}</option>)}
-            </select>
-            <button onClick={() => { resetForm(); setEditingContent(null); setShowCreateModal(true) }} className="flex items-center gap-2 px-6 py-3 bg-accent-500 hover:bg-accent-600 text-white font-semibold rounded-xl transition-all shadow-lg shadow-accent-500/30">
+            <button onClick={() => { resetForm(); setShowCreateModal(true) }} className="flex items-center gap-2 px-6 py-3 bg-accent-500 hover:bg-accent-600 text-white font-semibold rounded-xl transition-all shadow-lg shadow-accent-500/30">
               <Plus className="w-5 h-5" /> Create
             </button>
           </div>
@@ -264,19 +210,10 @@ export default function ContentManagement() {
                         })}
                       </div>
                     </td>
-                    <td className="px-6 py-4">
-                      <select 
-                        value={content.status} 
-                        onChange={(e) => handleStatusChange(content, e.target.value)}
-                        className="px-3 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-700 border-0 cursor-pointer"
-                      >
-                        {API_STATUS_OPTIONS.map((s) => <option key={s} value={s}>{s.charAt(0).toUpperCase() + s.slice(1)}</option>)}
-                      </select>
-                    </td>
+                    <td className="px-6 py-4"><span className="px-3 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-700">{content.status}</span></td>
                     <td className="px-6 py-4"><span className="text-sm text-navy-600">{content.mode}</span></td>
                     <td className="px-6 py-4">
                       <div className="flex gap-2">
-                        <button onClick={() => handleEdit(content)} className="p-2 hover:bg-cream-100 rounded-lg transition-colors"><Edit2 className="w-4 h-4 text-navy-600" /></button>
                         <button onClick={() => setConfirmDelete(content)} className="p-2 hover:bg-red-50 rounded-lg transition-colors"><Trash2 className="w-4 h-4 text-red-500" /></button>
                       </div>
                     </td>
@@ -331,8 +268,8 @@ export default function ContentManagement() {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-navy-950/80 backdrop-blur-sm">
           <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
             <div className="p-6 border-b border-cream-200 flex items-center justify-between">
-              <h2 className="font-display text-xl font-bold text-navy-950">{editingContent ? 'Edit Content' : 'Create Content'}</h2>
-              <button onClick={() => { setShowCreateModal(false); setEditingContent(null); resetForm() }} className="p-2 hover:bg-cream-100 rounded-lg"><XCircle className="w-5 h-5 text-navy-500" /></button>
+              <h2 className="font-display text-xl font-bold text-navy-950">Create Content</h2>
+              <button onClick={() => { setShowCreateModal(false); resetForm() }} className="p-2 hover:bg-cream-100 rounded-lg"><XCircle className="w-5 h-5 text-navy-500" /></button>
             </div>
             <form onSubmit={handleSubmit} className="p-6 space-y-5">
               <div>
@@ -354,15 +291,14 @@ export default function ContentManagement() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-semibold text-navy-800 mb-2">Goal</label>
-                  <select value={formData.goal} onChange={(e) => setFormData({ ...formData, goal: e.target.value })} className="w-full bg-cream-50 border-2 border-cream-200 focus:border-accent-500 rounded-xl px-4 py-3 focus:outline-none">
-                    {API_GOAL_OPTIONS.map((g) => <option key={g} value={g}>{g}</option>)}
-                  </select>
+                  <input type="text" value={formData.goal} onChange={(e) => setFormData({ ...formData, goal: e.target.value })} className="w-full bg-cream-50 border-2 border-cream-200 focus:border-accent-500 rounded-xl px-4 py-3 focus:outline-none focus:ring-4 focus:ring-accent-500/20" placeholder="e.g., Product Promotion" />
                 </div>
                 <div>
                   <label className="block text-sm font-semibold text-navy-800 mb-2">Mode</label>
                   <select value={formData.mode} onChange={(e) => setFormData({ ...formData, mode: e.target.value })} className="w-full bg-cream-50 border-2 border-cream-200 focus:border-accent-500 rounded-xl px-4 py-3 focus:outline-none">
                     {API_MODE_OPTIONS.map((m) => <option key={m} value={m}>{m}</option>)}
                   </select>
+                  <p className="text-xs text-navy-400 mt-1">Schedule runs every day at 9:00 AM</p>
                 </div>
               </div>
 
@@ -406,24 +342,11 @@ export default function ContentManagement() {
                 <input type="text" value={formData.media_instructions} onChange={(e) => setFormData({ ...formData, media_instructions: e.target.value })} className="w-full bg-cream-50 border-2 border-cream-200 focus:border-accent-500 rounded-xl px-4 py-3 focus:outline-none focus:ring-4 focus:ring-accent-500/20" placeholder="Instructions for AI media generation..." />
               </div>
 
-              {formData.mode === 'schedule' && (
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-semibold text-navy-800 mb-2">Publish Date</label>
-                    <input type="date" value={formData.publish_date} onChange={(e) => setFormData({ ...formData, publish_date: e.target.value })} className="w-full bg-cream-50 border-2 border-cream-200 focus:border-accent-500 rounded-xl px-4 py-3 focus:outline-none" />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-semibold text-navy-800 mb-2">Publish Time</label>
-                    <input type="time" value={formData.publish_time} onChange={(e) => setFormData({ ...formData, publish_time: e.target.value })} className="w-full bg-cream-50 border-2 border-cream-200 focus:border-accent-500 rounded-xl px-4 py-3 focus:outline-none" />
-                  </div>
-                </div>
-              )}
-
               <div className="flex gap-3 pt-4">
-                <button type="button" onClick={() => { setShowCreateModal(false); setEditingContent(null); resetForm() }} className="flex-1 py-3 border-2 border-cream-200 text-navy-700 font-semibold rounded-xl hover:bg-cream-50 transition-all">Cancel</button>
+                <button type="button" onClick={() => { setShowCreateModal(false); resetForm() }} className="flex-1 py-3 border-2 border-cream-200 text-navy-700 font-semibold rounded-xl hover:bg-cream-50 transition-all">Cancel</button>
                 <button type="submit" disabled={saving || formData.platforms.length === 0} className="flex-1 py-3 bg-accent-500 hover:bg-accent-600 text-white font-semibold rounded-xl transition-all disabled:opacity-50 flex items-center justify-center gap-2">
                   {saving && <Loader2 className="w-5 h-5 animate-spin" />}
-                  {editingContent ? 'Update' : 'Create'}
+                  Create
                 </button>
               </div>
             </form>
